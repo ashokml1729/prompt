@@ -965,6 +965,29 @@ textarea.input {
   background: linear-gradient(90deg, var(--purple-600), var(--purple-400), var(--purple-600));
 }
 
+.result-popup-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  z-index: 1;
+}
+.result-popup-close:hover {
+  background: var(--error);
+  color: white;
+}
+
 .result-popup-title {
   font-size: 1.3rem;
   font-weight: 800;

@@ -1,24 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../hooks/useSocket';
 import { useTypingEngine } from '../hooks/useTypingEngine';
 import { useToast } from '../components/Toast';
 import api from '../services/api';
 
+function generateGuestName() {
+  return 'Player_' + Math.random().toString(36).substring(2, 6).toUpperCase();
+}
+
 export default function Multiplayer() {
   const { code } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { emit, on, off, connected } = useSocket();
   const { addToast } = useToast();
 
+  const [guestName, setGuestName] = useState(() => {
+    return localStorage.getItem('prompt-guest-name') || generateGuestName();
+  });
   const [roomCode, setRoomCode] = useState(code || '');
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [raceText, setRaceText] = useState('');
   const [raceState, setRaceState] = useState('lobby'); // lobby, countdown, racing, finished
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(4);
   const [joinCode, setJoinCode] = useState('');
   const [publicRooms, setPublicRooms] = useState([]);
   const inputRef = useRef(null);
@@ -27,6 +32,11 @@ export default function Multiplayer() {
     currentIndex, charStatuses, isStarted, isFinished,
     wpm, accuracy, progress, timeLeft, handleKeyPress, resetTest,
   } = useTypingEngine(raceText, 'time_30');
+
+  // Save guest name to localStorage
+  useEffect(() => {
+    localStorage.setItem('prompt-guest-name', guestName);
+  }, [guestName]);
 
   // Load public rooms
   useEffect(() => {
@@ -37,10 +47,10 @@ export default function Multiplayer() {
 
   // Join room on mount if code provided
   useEffect(() => {
-    if (code && user && connected) {
-      emit('join-room', { roomCode: code, user });
+    if (code && connected) {
+      emit('join-room', { roomCode: code, username: guestName });
     }
-  }, [code, user, connected]);
+  }, [code, connected]);
 
   // Socket listeners
   useEffect(() => {
@@ -102,7 +112,7 @@ export default function Multiplayer() {
 
   const createRoom = async () => {
     try {
-      const res = await api.post('/rooms', { mode: 'time_30' });
+      const res = await api.post('/rooms', { mode: 'time_30', hostName: guestName });
       navigate(`/multiplayer/${res.data.room_code}`);
     } catch (err) {
       addToast('Failed to create room', 'error');
@@ -136,65 +146,65 @@ export default function Multiplayer() {
             👥 Multiplayer
           </h1>
 
-          {!user ? (
-            <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                Please log in to join multiplayer races
-              </p>
-              <a href="/login" className="btn btn-primary">Log In</a>
-            </div>
-          ) : (
-            <div className="lobby-grid">
-              <div>
-                <div className="card" style={{ marginBottom: '16px' }}>
-                  <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Create Room</h3>
-                  <button className="btn btn-primary" onClick={createRoom} style={{ width: '100%' }}>
-                    + Create New Room
-                  </button>
-                </div>
-
-                <div className="card">
-                  <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Join Room</h3>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      className="input"
-                      placeholder="Room code (e.g. ABC123)"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      style={{ flex: 1, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
-                    />
-                    <button className="btn btn-primary" onClick={joinRoom}>Join</button>
-                  </div>
-                </div>
+          <div className="lobby-grid">
+            <div>
+              <div className="card" style={{ marginBottom: '16px' }}>
+                <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Your Name</h3>
+                <input
+                  className="input"
+                  placeholder="Enter your name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  maxLength={20}
+                  style={{ marginBottom: '16px', fontFamily: 'var(--font-mono)' }}
+                />
+                <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Create Room</h3>
+                <button className="btn btn-primary" onClick={createRoom} style={{ width: '100%' }}>
+                  + Create New Room
+                </button>
               </div>
 
               <div className="card">
-                <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Public Rooms</h3>
-                {publicRooms.length === 0 ? (
-                  <p style={{ color: 'var(--text-tertiary)', fontSize: '0.88rem' }}>
-                    No active rooms. Create one!
-                  </p>
-                ) : (
-                  publicRooms.map((r) => (
-                    <div key={r.id} className="room-card">
-                      <div>
-                        <div style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{r.room_code}</div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                          Host: {r.host_username} · {r.player_count} players
-                        </div>
-                      </div>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => navigate(`/multiplayer/${r.room_code}`)}
-                      >
-                        Join
-                      </button>
-                    </div>
-                  ))
-                )}
+                <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Join Room</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    className="input"
+                    placeholder="Room code (e.g. ABC123)"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    style={{ flex: 1, fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
+                  />
+                  <button className="btn btn-primary" onClick={joinRoom}>Join</button>
+                </div>
               </div>
             </div>
-          )}
+
+            <div className="card">
+              <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Public Rooms</h3>
+              {publicRooms.length === 0 ? (
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.88rem' }}>
+                  No active rooms. Create one!
+                </p>
+              ) : (
+                publicRooms.map((r) => (
+                  <div key={r.room_code} className="room-card">
+                    <div>
+                      <div style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{r.room_code}</div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
+                        Host: {r.host_username} · {r.player_count} players
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => navigate(`/multiplayer/${r.room_code}`)}
+                    >
+                      Join
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -271,6 +281,7 @@ export default function Multiplayer() {
         {raceState === 'finished' && (
           <div className="result-overlay">
             <div className="result-popup">
+              <button className="result-popup-close" onClick={() => navigate('/multiplayer')} aria-label="Close">✕</button>
               <div className="result-popup-title">🏁 Race Complete!</div>
               <div className="result-popup-wpm">{wpm}</div>
               <div className="result-popup-wpm-label">Your WPM</div>

@@ -1,72 +1,78 @@
-import pool from '../config/db.js';
-
 export function setupSocketHandlers(io) {
-  const rooms = new Map(); // roomCode -> { players, text, status, countdown }
+  const rooms = new Map(); // roomCode -> { players, text, status }
 
   io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    socket.on('join-room', async ({ roomCode, user }) => {
+    socket.on('join-room', ({ roomCode, username }) => {
       try {
-        const roomResult = await pool.query(
-          'SELECT * FROM race_rooms WHERE room_code = $1',
-          [roomCode.toUpperCase()]
-        );
+        const code = roomCode.toUpperCase();
+        socket.join(code);
+        socket.roomCode = code;
+        socket.username = username || 'Guest';
 
-        if (roomResult.rows.length === 0) {
-          socket.emit('error', { message: 'Room not found' });
-          return;
-        }
-
-        const room = roomResult.rows[0];
-        socket.join(roomCode);
-        socket.roomCode = roomCode;
-        socket.userId = user.id;
-        socket.username = user.username;
-
-        // Track in memory
-        if (!rooms.has(roomCode)) {
-          rooms.set(roomCode, {
+        // Auto-create room if it doesn't exist
+        if (!rooms.has(code)) {
+          rooms.set(code, {
             players: new Map(),
-            text: room.text_content,
-            status: room.status,
-            hostId: room.host_id,
+            text: null,
+            status: 'waiting',
           });
         }
 
-        const roomData = rooms.get(roomCode);
+        const roomData = rooms.get(code);
         roomData.players.set(socket.id, {
-          id: user.id,
-          username: user.username,
-          avatar: user.avatar || '',
+          id: socket.id,
+          username: socket.username,
           progress: 0,
           wpm: 0,
           accuracy: 100,
           finished: false,
         });
 
-        // Add to DB if not already
-        const existingParticipant = await pool.query(
-          'SELECT id FROM race_participants WHERE room_id = $1 AND user_id = $2',
-          [room.id, user.id]
-        );
-        if (existingParticipant.rows.length === 0) {
-          await pool.query(
-            'INSERT INTO race_participants (room_id, user_id) VALUES ($1, $2)',
-            [room.id, user.id]
-          );
-        }
-
         // Broadcast updated player list
-        io.to(roomCode).emit('room-update', {
+        io.to(code).emit('room-update', {
           players: Array.from(roomData.players.values()),
           status: roomData.status,
-          hostId: roomData.hostId,
           text: roomData.text,
         });
       } catch (err) {
         console.error('Join room error:', err);
         socket.emit('error', { message: 'Failed to join room' });
+      }
+    });
+
+    socket.on('create-room', ({ roomCode, username }) => {
+      try {
+        const code = roomCode.toUpperCase();
+        socket.join(code);
+        socket.roomCode = code;
+        socket.username = username || 'Host';
+
+        rooms.set(code, {
+          players: new Map(),
+          text: null,
+          status: 'waiting',
+        });
+
+        const roomData = rooms.get(code);
+        roomData.players.set(socket.id, {
+          id: socket.id,
+          username: socket.username,
+          progress: 0,
+          wpm: 0,
+          accuracy: 100,
+          finished: false,
+        });
+
+        io.to(code).emit('room-update', {
+          players: Array.from(roomData.players.values()),
+          status: roomData.status,
+          text: roomData.text,
+        });
+      } catch (err) {
+        console.error('Create room error:', err);
+        socket.emit('error', { message: 'Failed to create room' });
       }
     });
 
@@ -77,11 +83,14 @@ export function setupSocketHandlers(io) {
       roomData.status = 'countdown';
       roomData.text = text;
 
-      // Update DB
-      pool.query(
-        "UPDATE race_rooms SET status = 'racing', text_content = $1 WHERE room_code = $2",
-        [text, roomCode]
-      );
+      // Reset all players for a new race
+      for (const player of roomData.players.values()) {
+        player.progress = 0;
+        player.wpm = 0;
+        player.accuracy = 100;
+        player.finished = false;
+        player.position = 0;
+      }
 
       io.to(roomCode).emit('race-countdown', { text });
 
@@ -114,7 +123,7 @@ export function setupSocketHandlers(io) {
       }
     });
 
-    socket.on('player-finished', async ({ roomCode, wpm, accuracy }) => {
+    socket.on('player-finished', ({ roomCode, wpm, accuracy }) => {
       const roomData = rooms.get(roomCode);
       if (!roomData) return;
 
@@ -131,19 +140,6 @@ export function setupSocketHandlers(io) {
         ).length;
         player.position = finishedCount;
 
-        // Update DB
-        const roomResult = await pool.query(
-          'SELECT id FROM race_rooms WHERE room_code = $1',
-          [roomCode]
-        );
-        if (roomResult.rows.length > 0) {
-          await pool.query(
-            `UPDATE race_participants SET wpm = $1, accuracy = $2, position = $3, finished_at = NOW()
-             WHERE room_id = $4 AND user_id = $5`,
-            [wpm, accuracy, finishedCount, roomResult.rows[0].id, socket.userId]
-          );
-        }
-
         io.to(roomCode).emit('progress-update', {
           players: Array.from(roomData.players.values()),
         });
@@ -157,11 +153,6 @@ export function setupSocketHandlers(io) {
           io.to(roomCode).emit('race-finished', {
             players: Array.from(roomData.players.values()),
           });
-
-          await pool.query(
-            "UPDATE race_rooms SET status = 'finished' WHERE room_code = $1",
-            [roomCode]
-          );
         }
       }
     });
@@ -178,7 +169,6 @@ export function setupSocketHandlers(io) {
             io.to(socket.roomCode).emit('room-update', {
               players: Array.from(roomData.players.values()),
               status: roomData.status,
-              hostId: roomData.hostId,
               text: roomData.text,
             });
           }

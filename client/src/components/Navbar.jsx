@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useState, useCallback } from 'react';
 
@@ -21,7 +20,6 @@ function KeyboardIcon() {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,28 +51,14 @@ export default function Navbar() {
           <Link to="/test" className={isActive('/test')} onClick={() => setMenuOpen(false)}>Test</Link>
           <Link to="/race" className={isActive('/race')} onClick={() => setMenuOpen(false)}>Race</Link>
           <Link to="/multiplayer" className={isActive('/multiplayer')} onClick={() => setMenuOpen(false)}>Multiplayer</Link>
-          <Link to="/leaderboard" className={isActive('/leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
           <Link to="/practice" className={isActive('/practice')} onClick={() => setMenuOpen(false)}>Practice</Link>
           <Link to="/feedback" className={isActive('/feedback')} onClick={() => setMenuOpen(false)}>Feedback</Link>
         </div>
 
         <div className="navbar-right">
-
           <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          {user ? (
-            <>
-              <Link to="/profile" className="btn btn-ghost btn-sm">
-                {user.username}
-              </Link>
-              <button onClick={logout} className="btn btn-ghost btn-sm">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="btn btn-primary btn-sm">Login</Link>
-          )}
           <button className="theme-toggle" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
             {isFullscreen ? '⊡' : '⛶'}
           </button>
@@ -83,4 +67,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

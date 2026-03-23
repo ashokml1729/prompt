@@ -1,39 +1,15 @@
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
-import api from '../services/api';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export default function Results() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addToast } = useToast();
-  const savedRef = useRef(false);
 
   const data = location.state;
 
   useEffect(() => {
     if (!data) {
       navigate('/test');
-      return;
-    }
-
-    // Save result if logged in
-    if (user && !savedRef.current) {
-      savedRef.current = true;
-      api.post('/results', {
-        wpm: data.wpm,
-        raw_wpm: data.rawWpm,
-        accuracy: data.accuracy,
-        errors: data.errors,
-        duration: data.duration,
-        mode: data.mode,
-      }).then(() => {
-        addToast('Result saved!', 'success');
-      }).catch(() => {
-        addToast('Failed to save result', 'error');
-      });
     }
   }, []);
 
@@ -125,16 +101,10 @@ export default function Results() {
           <Link to="/test" className="btn btn-primary btn-lg">
             Try Again
           </Link>
-          <Link to="/leaderboard" className="btn btn-secondary btn-lg">
-            Leaderboard
+          <Link to="/race" className="btn btn-secondary btn-lg">
+            Street Race
           </Link>
         </div>
-
-        {!user && (
-          <p style={{ textAlign: 'center', marginTop: '20px', color: 'var(--text-tertiary)', fontSize: '0.88rem' }}>
-            <Link to="/login">Sign in with Google</Link> to save your results and track progress!
-          </p>
-        )}
       </div>
     </div>
   );

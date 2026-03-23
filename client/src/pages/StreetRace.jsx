@@ -1,19 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTypingEngine } from '../hooks/useTypingEngine';
 import { generateWordsForTime } from '../utils/wordLists';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import api from '../services/api';
 
 const GHOST_SPEEDS = [30, 40, 50, 60, 80];
 
 export default function StreetRace() {
+  const navigate = useNavigate();
   const [text, setText] = useState('');
   const [raceState, setRaceState] = useState('ready'); // ready, countdown, racing, finished
   const [countdown, setCountdown] = useState(3);
   const [ghostSpeed, setGhostSpeed] = useState(50);
   const inputRef = useRef(null);
-  const { user } = useAuth();
   const { addToast } = useToast();
 
   const mode = 'time_30';
@@ -28,9 +27,7 @@ export default function StreetRace() {
     setText(generateWordsForTime(30));
   }, []);
 
-  // Ghost progress: at ghostSpeed WPM, in 30s the ghost types (ghostSpeed * 5) characters per minute
-  // Over 30s that's (ghostSpeed * 5 * 30/60) = ghostSpeed * 2.5 characters
-  // Progress = chars typed / total chars * 100
+  // Ghost progress
   const ghostCharsTyped = isStarted ? (ghostSpeed / 60) * 5 * elapsedTime : 0;
   const ghostProgress = text.length > 0 ? Math.min((ghostCharsTyped / text.length) * 100, 100) : 0;
 
@@ -55,12 +52,6 @@ export default function StreetRace() {
   useEffect(() => {
     if (isFinished && raceState === 'racing') {
       setRaceState('finished');
-      if (user) {
-        api.post('/results', {
-          wpm, raw_wpm: rawWpm, accuracy, errors,
-          duration: 30, mode: 'race_solo',
-        }).catch(() => {});
-      }
     }
   }, [isFinished]);
 
@@ -117,7 +108,7 @@ export default function StreetRace() {
             >
               🏎️
             </div>
-            <span className="race-player-name">{user?.username || 'You'}</span>
+            <span className="race-player-name">You</span>
             <span className="race-player-wpm">{wpm} WPM</span>
           </div>
           {/* Ghost racer */}
@@ -186,6 +177,7 @@ export default function StreetRace() {
         {raceState === 'finished' && (
           <div className="result-overlay" onClick={(e) => e.target === e.currentTarget && startRace()}>
             <div className="result-popup">
+              <button className="result-popup-close" onClick={() => navigate('/')} aria-label="Close">✕</button>
               <div className="result-popup-title">
                 {wpm > ghostSpeed ? '🏆 You Win!' : '🏁 Race Complete!'}
               </div>

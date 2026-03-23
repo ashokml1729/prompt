@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
-  const { user } = useAuth();
-
   return (
     <div className="page">
       <div className="container">
@@ -11,7 +8,7 @@ export default function Home() {
           <h1>Type Faster.<br />Race Further.</h1>
           <p>
             Sharpen your typing skills with real-time speed tests, compete in street races,
-            and climb the global leaderboard. How fast can you go?
+            and challenge friends in multiplayer. How fast can you go?
           </p>
           <div className="hero-actions">
             <Link to="/test" className="btn btn-primary btn-lg">
@@ -20,11 +17,6 @@ export default function Home() {
             <Link to="/race" className="btn btn-secondary btn-lg">
               🏎️ Street Race
             </Link>
-            {!user && (
-              <Link to="/login" className="btn btn-ghost btn-lg">
-                Login with Google →
-              </Link>
-            )}
           </div>
 
           <div className="hero-features">
@@ -44,9 +36,9 @@ export default function Home() {
               <p>Race against friends or strangers in real-time multiplayer rooms. Create or join races instantly.</p>
             </div>
             <div className="card feature-card">
-              <div className="feature-icon">🏆</div>
-              <h3>Leaderboard</h3>
-              <p>Compete for the top spot on the global leaderboard. Filter by time period and test mode.</p>
+              <div className="feature-icon">📝</div>
+              <h3>Practice</h3>
+              <p>Hone your skills with dedicated practice mode. Improve accuracy and build muscle memory.</p>
             </div>
           </div>
         </section>

@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTypingEngine } from '../hooks/useTypingEngine';
 import { getRandomQuote } from '../utils/quotes';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 
 export default function Practice() {
   const [practiceMode, setPracticeMode] = useState('quote'); // 'quote' or 'custom'
@@ -10,7 +8,7 @@ export default function Practice() {
   const [activeText, setActiveText] = useState('');
   const [currentQuote, setCurrentQuote] = useState(null);
   const inputRef = useRef(null);
-  const { user } = useAuth();
+
 
   const {
     currentIndex, charStatuses, isStarted, isFinished,
@@ -30,15 +28,7 @@ export default function Practice() {
     }
   }, [practiceMode]);
 
-  useEffect(() => {
-    if (isFinished && user) {
-      api.post('/results', {
-        wpm, raw_wpm: rawWpm, accuracy, errors,
-        duration: Math.round(elapsedTime),
-        mode: practiceMode === 'quote' ? 'practice_quote' : 'practice_custom',
-      }).catch(() => {});
-    }
-  }, [isFinished]);
+
 
   const handleStart = () => {
     if (practiceMode === 'custom' && customText.trim()) {
