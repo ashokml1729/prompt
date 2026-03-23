@@ -6,7 +6,8 @@ export function useSocket() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    socketRef.current = io(window.location.origin, {
+    const SOCKET_URL = import.meta.env.VITE_API_URL || window.location.origin;
+    socketRef.current = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
     });
 

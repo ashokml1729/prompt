@@ -1,23 +1,15 @@
 import { Resend } from 'resend';
 
-let resend;
-
-function getResend() {
-  if (!resend) {
-    const key = process.env.RESEND_API_KEY;
-    if (!key) {
-      throw new Error('RESEND_API_KEY is not set in environment variables');
-    }
-    resend = new Resend(key);
-  }
-  return resend;
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendFeedbackEmail({ name, email, message }) {
+  // In Resend free tier without a verified domain,
+  // you can only send TO your own verified email address
+  // and must use onboarding@resend.dev as sender.
   const toEmail = process.env.FEEDBACK_EMAIL || 'ashokbd369@gmail.com';
 
   try {
-    const result = await getResend().emails.send({
+    const result = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: toEmail,
       subject: `Prompt Feedback from ${name}`,
