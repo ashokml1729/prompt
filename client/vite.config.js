@@ -19,8 +19,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          if (id.includes('react-dom') || id.includes('react-router-dom') || id.includes('react')) {
+            return 'vendor';
+          }
         },
       },
     },
