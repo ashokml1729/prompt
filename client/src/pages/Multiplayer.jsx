@@ -294,9 +294,6 @@ export default function Multiplayer() {
               <div className="result-popup-ranking">
                 {[...players].sort((a, b) => (a.position || 99) - (b.position || 99)).map((p, i) => (
                   <div key={i} className="result-popup-ranking-item">
-                    <span className="result-popup-ranking-rank">
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                    </span>
                     <span className="result-popup-ranking-name">{p.username}</span>
                     <span className="result-popup-ranking-wpm">{p.wpm} WPM</span>
                   </div>
