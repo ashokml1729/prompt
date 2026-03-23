@@ -70,13 +70,6 @@
 - Preference saved in `localStorage`
 - Purple-accented design in both modes
 
-### 🔐 Authentication
-
-- Email + Password signup/login with **bcrypt** password hashing
-- **OAuth** login (Google)
-- Email format validation + MX record DNS check
-- **JWT**-based session management
-
 ---
 
 ## 🛠️ Tech Stack
@@ -87,7 +80,6 @@
 | Backend   | Node.js + Express                          |
 | Database  | PostgreSQL                                 |
 | Real-time | Socket.io                                  |
-| Auth      | JWT + bcrypt + Google OAuth                |
 | Email     | Resend API                                 |
 | Styling   | CSS Variables + Purple theme               |
 
@@ -100,7 +92,6 @@
 - Node.js >= 18
 - PostgreSQL >= 14
 - A [Resend](https://resend.com) account (for feedback emails)
-- A [Google Cloud](https://console.cloud.google.com) project (for OAuth)
 
 ### 1. Clone the repository
 
@@ -162,13 +153,6 @@ Create a `.env` file inside the `/server` directory:
 # Database
 DATABASE_URL=postgresql://username:password@localhost:5432/prompt_db
 
-# JWT
-JWT_SECRET=your_super_secret_jwt_key
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
 # Resend (for feedback emails)
 RESEND_API_KEY=your_resend_api_key
 FEEDBACK_RECIPIENT_EMAIL=ashokbd369@gmail.com
@@ -200,18 +184,15 @@ prompt-typing-app/
 │   │   │   ├── Profile/
 │   │   │   ├── Leaderboard/
 │   │   │   ├── Practice/
-│   │   │   ├── Feedback/
-│   │   │   ├── Login/
-│   │   │   └── Signup/
+│   │   │   └── Feedback/
 │   │   ├── hooks/              # Custom React hooks
-│   │   ├── context/            # Auth & Theme context
-│   │   ├── utils/              # Helpers (email validator, WPM calc)
+│   │   ├── context/            # Theme context
+│   │   ├── utils/              # Helpers (WPM calc, etc.)
 │   │   └── App.jsx
 │   └── package.json
 │
 ├── server/                     # Node.js + Express backend
 │   ├── routes/
-│   │   ├── auth.js
 │   │   ├── tests.js
 │   │   ├── race.js
 │   │   ├── leaderboard.js
@@ -220,13 +201,14 @@ prompt-typing-app/
 │   ├── controllers/
 │   ├── models/
 │   ├── middleware/
-│   │   ├── auth.js             # JWT verification
 │   │   └── validate.js         # Input validation
 │   ├── sockets/                # Socket.io handlers
 │   ├── db/
 │   │   └── migrations/
+│   ├── utils/
+│   │   └── email.js            # Resend email helper
 │   ├── .env.example
-│   └── index.js
+│   └── server.js
 │
 ├── shared/                     # Shared constants/types
 └── README.md
@@ -242,9 +224,6 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255),
-  oauth_provider VARCHAR(50),
-  oauth_id VARCHAR(255),
   avatar_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -299,16 +278,6 @@ CREATE TABLE feedback (
 
 ## 📡 API Endpoints
 
-### Auth
-
-| Method | Endpoint                    | Description                    |
-| ------ | --------------------------- | ------------------------------ |
-| POST   | `/api/auth/signup`          | Register with email + password |
-| POST   | `/api/auth/login`           | Login with email + password    |
-| GET    | `/api/auth/google`          | Initiate Google OAuth          |
-| GET    | `/api/auth/google/callback` | Google OAuth callback          |
-| POST   | `/api/auth/logout`          | Logout                         |
-
 ### Tests
 
 | Method | Endpoint             | Description             |
@@ -351,7 +320,7 @@ Contributions are welcome! Please follow these steps:
 
 ## 💬 Feedback
 
-Found a bug or have a suggestion? Use the in-app **Feedback** section or open a [GitHub Issue](https://github.com/yourusername/prompt-typing-app/issues).
+Found a bug or have a suggestion? Use the in-app **Feedback** section or open a [GitHub Issue](https://github.com/ashokml1729/prompt/issues).
 
 ---
 
