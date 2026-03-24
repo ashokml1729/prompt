@@ -295,7 +295,7 @@ export default function Multiplayer() {
                 {[...players].sort((a, b) => (a.position || 99) - (b.position || 99)).map((p, i) => (
                   <div key={i} className="result-popup-ranking-item">
                     <span className="result-popup-ranking-name">{p.username}</span>
-                    <span className="result-popup-ranking-name">{accuracy}</span>
+                    <span className="result-popup-ranking-name">{accuracy}%</span>
                     <span className="result-popup-ranking-wpm">{p.wpm} WPM</span>
                   </div>
                 ))}
